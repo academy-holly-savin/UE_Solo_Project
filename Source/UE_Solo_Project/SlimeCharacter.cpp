@@ -132,7 +132,7 @@ bool ASlimeCharacter::HasPlayerFoundNewSurface(FVector& NewGravity)
 
 bool ASlimeCharacter::HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVector& NewLocation)
 {
-	const FVector Start = GetActorLocation() + GetActorUpVector() * 200.0f;
+	const FVector Start = GetActorLocation() + GetActorUpVector() * -200.0f;
 	const FVector End = Start + GetActorForwardVector() * -30.0f;
 
 	FCollisionQueryParams CollisionParams;

@@ -1,6 +1,7 @@
 #include "ClimbingState.h"
 #include "../SlimeCharacter.h"
 #include "FallingState.h"
+#include "DefaultState.h"
 
 void ClimbingState::OnEnter()
 {
@@ -37,6 +38,11 @@ void ClimbingState::OnUpdate()
 		{
 			Player->AttachToWall(NewGravity, true);
 		}
+	}
+
+	if (Player->IsPlayerGrounded())
+	{
+		Player->SetState<DefaultState>();
 	}
 }
 
