@@ -159,11 +159,11 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	typedef void (ASlimeCharacter::* FPointer)(const FInputActionValue&);
+
 	void ResetBindings();
 
-	void BindDefaultInputs();
-	void BindAirborneInput();
-	void BindClimbingInputs();
+	void SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, UObject* Object, FPointer FunctionName);
 
 	//Input callback functions
 	void Move(const FInputActionValue& Value);

@@ -5,11 +5,14 @@
 
 void DefaultState::OnEnter()
 {
-	Player->BindDefaultInputs();
-}
+	if (!Player->InputComponent) return;
 
-void DefaultState::OnExit()
-{
+	Player->ResetBindings();
+
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Move);
+	Player->SetUpBinding(Player->JumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Jump);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, Player, &ASlimeCharacter::ChargeJump);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::ChargeJump);
 }
 
 void DefaultState::OnUpdate()
@@ -40,8 +43,4 @@ void DefaultState::OnUpdate()
 			Player->SetState<ClimbingState>();
 		}
 	}
-}
-
-void DefaultState::OnHit()
-{
 }

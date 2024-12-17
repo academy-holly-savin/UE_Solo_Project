@@ -5,7 +5,12 @@
 
 void FallingState::OnEnter()
 {
-	Player->BindAirborneInput();
+	if (!Player->InputComponent) return;
+
+	Player->ResetBindings();
+
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Move);
+
 	if (Player->JumpVelocity != FVector::Zero())
 	{
 		Player->JumpVelocity = FVector::Zero();

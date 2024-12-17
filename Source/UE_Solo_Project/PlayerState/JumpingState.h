@@ -8,7 +8,6 @@ public:
 
     void OnEnter() override;
     void OnExit() override;
-    void OnUpdate() override;
     void OnHit() override;
 
     FName GetName() override {

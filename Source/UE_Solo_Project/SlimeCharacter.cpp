@@ -202,54 +202,18 @@ void ASlimeCharacter::ResetBindings()
 	if (!InputComponent) return;
 
 	InputComponent->ClearActionBindings();
-	InputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Look);
+
+	SetUpBinding(LookAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Look);
+	SetUpBinding(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
+	SetUpBinding(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
+	SetUpBinding(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
+	SetUpBinding(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
 
 }
 
-void ASlimeCharacter::BindDefaultInputs()
+void ASlimeCharacter::SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, UObject* Object, FPointer FunctionPointer)
 {
-	if (!InputComponent) return;
-
-	ResetBindings();
-
-	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
-	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-	InputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Jump);
-	InputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
-	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeJump);
-	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeJump);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);	
-}
-
-void ASlimeCharacter::BindAirborneInput()
-{
-	if (!InputComponent) return;
-
-	ResetBindings();
-
-	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
-	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
-}
-
-void ASlimeCharacter::BindClimbingInputs()
-{
-	if (!InputComponent) return;
-
-	ResetBindings();
-
-	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::OnWallMove);
-	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-	InputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Jump);
-	InputComponent->BindAction(DetachAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Detach);
-	InputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
-
-	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeJump);
-	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeJump);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
-	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
+	InputComponent->BindAction(Action, TriggerEvent, this, FunctionPointer);
 }
 
 void ASlimeCharacter::Move(const FInputActionValue& Value)

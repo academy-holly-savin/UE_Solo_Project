@@ -6,7 +6,11 @@
 
 void JumpingState::OnEnter()
 {
-	Player->BindAirborneInput();
+	if (!Player->InputComponent) return;
+
+	Player->ResetBindings();
+
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Move);
 
 	const FVector LaunchVelocity = Player->JumpVelocity * (Player->GetActorUpVector() + Player->GetActorForwardVector());
 
@@ -25,10 +29,6 @@ void JumpingState::OnExit()
 {
 	//Play sound at location
 	Player->JumpVelocity = FVector::Zero();
-}
-
-void JumpingState::OnUpdate()
-{
 }
 
 void JumpingState::OnHit()

@@ -5,11 +5,15 @@
 
 void ClimbingState::OnEnter()
 {
-	Player->BindClimbingInputs();
-}
+	if (!Player->InputComponent) return;
 
-void ClimbingState::OnExit()
-{
+	Player->ResetBindings();
+
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::OnWallMove);
+	Player->SetUpBinding(Player->JumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Jump);
+	Player->SetUpBinding(Player->DetachAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Detach);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, Player, &ASlimeCharacter::ChargeJump);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::ChargeJump);
 }
 
 void ClimbingState::OnUpdate()
@@ -44,8 +48,4 @@ void ClimbingState::OnUpdate()
 	{
 		Player->SetState<DefaultState>();
 	}
-}
-
-void ClimbingState::OnHit()
-{
 }
