@@ -88,6 +88,16 @@ void ASlimeCharacter::BeginPlay()
 	SetState<DefaultState>();
 }
 
+FVector ASlimeCharacter::GetJumpVelocity()
+{
+	return JumpVelocity;
+}
+
+void ASlimeCharacter::SetJumpVelocity(const FVector& NewVelocity)
+{
+	JumpVelocity = NewVelocity;
+}
+
 void ASlimeCharacter::PlaySoundAtLocation(USoundCue* SoundCue)
 {
 	if (SoundCue)

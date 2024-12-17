@@ -1,5 +1,6 @@
 #include "JumpingState.h"
 #include "../SlimeCharacter.h"
+
 #include "DefaultState.h"
 #include "ClimbingState.h"
 #include "FallingState.h"
@@ -12,13 +13,9 @@ void JumpingState::OnEnter()
 
 	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, &ASlimeCharacter::Move);
 
-	const FVector LaunchVelocity = Player->JumpVelocity * (Player->GetActorUpVector() + Player->GetActorForwardVector());
-
-
-	UE_LOG(LogTemp, Warning, TEXT("Jump vel : % f"), Player->JumpVelocity.X);
+	const FVector LaunchVelocity = Player->GetJumpVelocity() * (Player->GetActorUpVector() + Player->GetActorForwardVector());
 
 	Player->LaunchCharacter(LaunchVelocity, false, false);
-
 
 	Player->PlaySoundAtLocation(Player->JumpSound);
 
@@ -28,7 +25,8 @@ void JumpingState::OnEnter()
 void JumpingState::OnExit()
 {
 	Player->PlaySoundAtLocation(Player->SplatSound);
-	Player->JumpVelocity = FVector::Zero();
+
+	Player->SetJumpVelocity(FVector::Zero());
 }
 
 void JumpingState::OnHit()

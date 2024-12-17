@@ -1,6 +1,6 @@
 #include "FallingState.h"
-#include "EnhancedInputComponent.h"
 #include "../SlimeCharacter.h"
+
 #include "DefaultState.h"
 
 void FallingState::OnEnter()
@@ -13,9 +13,9 @@ void FallingState::OnEnter()
 
 	Player->SetMaterialOverTime(Player->FallingMaterial);
 
-	if (Player->JumpVelocity != FVector::Zero())
+	if (Player->GetJumpVelocity() != FVector::Zero())
 	{
-		Player->JumpVelocity = FVector::Zero();
+		Player->SetJumpVelocity(FVector::Zero());
 	}
 
 	Player->ApplyGravityTransition(FVector(0, 0, -1));

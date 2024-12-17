@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <memory>
 #include "CoreMinimal.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/Character.h"
@@ -20,9 +21,9 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 
-#include "PlayerState/PlayerStateInterface.h"
-#include <memory>
 #include "Sound/SoundCue.h"
+
+#include "PlayerState/PlayerStateInterface.h"
 
 #include "SlimeCharacter.generated.h"
 
@@ -35,13 +36,10 @@ class UE_SOLO_PROJECT_API ASlimeCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// ----------- Properites -----------
+	// ----------- UPROPERTIES -----------
 	//Slime
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* SlimeMesh;
-
-	UPROPERTY(VisibleAnywhere)
-	UMaterialInstanceDynamic* DynamicMaterialInstance;
 
 	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -95,6 +93,10 @@ public:
 	USoundCue* SplatSound;
 
 	//Materials
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Material")
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Material")
 	UMaterialInstance* DefaultMaterial;
 
@@ -120,6 +122,20 @@ public:
 
 	UEnhancedInputComponent* InputComponent;
 
+private:
+
+	std::unique_ptr<IPlayerState> CurrentState;
+
+	float PickUpCooldown;
+	float JumpCooldown;
+	float IncrementRate;
+	float MaxDistanceFromSurface = 100.f;
+
+	FVector JumpVelocity;
+	FVector ThrowVelocity;
+	FVector MovementVectorX;
+	FVector MovementVectorY;
+
 	// ----------- Methods -----------
 private:
 
@@ -130,15 +146,23 @@ private:
 	FVector GetChargedVelocity(const FVector& CurrentVelocity, const float MinVel, const float MaxVel, const float ChargeRate);
 
 	bool LineTraceInDirection(const FVector& Direction, const float LineLength, FHitResult& OutHit);
+
 	bool LineTraceInDirection(const FVector& Direction, const float LineLength);
 
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:
+
 	// Sets default values for this character's properties
 	ASlimeCharacter();
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// ----------- UFUNCTIONS -----------
 
 	UFUNCTION(BlueprintCallable)
 	void LerpGravity(const FVector& NewGravityDirection, const float Alpha);
@@ -152,7 +176,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void OnHit();
 
-	//Timeline events
+	// Timeline Events
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void ApplyGravityTransition(const FVector& NewGravityDirection, const float PlaybackRate = 1.0f);
 
@@ -162,7 +186,11 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetMaterialOverTime(UMaterialInstance* NewMaterial, const float Alpha = 1.0f);
 
-	//Privates?
+	// Internal
+
+	FVector GetJumpVelocity();
+
+	void SetJumpVelocity(const FVector& NewVelocity);
 
 	template<typename InheritsPlayerState>
 	void SetState();
@@ -185,7 +213,8 @@ public:
 
 	void DetachFromWall();
 
-	// Called to bind functionality to input
+	// Input Binding
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	typedef void (ASlimeCharacter::* FPointer)(const FInputActionValue&);
@@ -194,7 +223,8 @@ public:
 
 	void SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, FPointer FunctionName);
 
-	//Input callback functions
+	// Input Callbacks
+
 	void Move(const FInputActionValue& Value);
 
 	void OnWallMove(const FInputActionValue& Value);
@@ -212,23 +242,6 @@ public:
 	void Detach(const FInputActionValue& Value);
 
 	void Interact(const FInputActionValue& Value);
-
-public:
-	std::unique_ptr<IPlayerState> CurrentState;
-
-	float PickUpCooldown;
-	float JumpCooldown;
-	float IncrementRate;
-	float MaxDistanceFromSurface = 100.f;
-
-	FVector JumpVelocity;
-	FVector ThrowVelocity;
-	FVector MovementVectorX;
-	FVector MovementVectorY;
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 };
 
