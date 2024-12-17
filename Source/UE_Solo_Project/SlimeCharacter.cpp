@@ -18,8 +18,6 @@
 #include "PlayerState/JumpingState.h"
 #include "PlayerState/FallingState.h"
 
-#include "UObject/ConstructorHelpers.h"
-
 #include "Logging/LogMacros.h"
 
 // Sets default values
@@ -27,14 +25,6 @@ ASlimeCharacter::ASlimeCharacter()
 {
 	SlimeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SlimeMesh"));
 	SlimeMesh->SetupAttachment(GetCapsuleComponent());
-
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>
-		meshFinder(TEXT("/Script/Engine.StaticMesh'/Game/Meshes/Slime/Slime_Slime_Body.Slime_Slime_Body'"));
-	if (SlimeMesh && meshFinder.Succeeded())
-	{
-		SlimeMesh->SetStaticMesh(meshFinder.Object);
-		SlimeMesh->SetRelativeLocation(FVector(0, 0, 0));
-	}
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
