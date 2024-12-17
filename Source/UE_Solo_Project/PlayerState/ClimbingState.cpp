@@ -9,11 +9,11 @@ void ClimbingState::OnEnter()
 
 	Player->ResetBindings();
 
-	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::OnWallMove);
-	Player->SetUpBinding(Player->JumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Jump);
-	Player->SetUpBinding(Player->DetachAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Detach);
-	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, Player, &ASlimeCharacter::ChargeJump);
-	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::ChargeJump);
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, &ASlimeCharacter::OnWallMove);
+	Player->SetUpBinding(Player->JumpAction, ETriggerEvent::Triggered, &ASlimeCharacter::Jump);
+	Player->SetUpBinding(Player->DetachAction, ETriggerEvent::Triggered, &ASlimeCharacter::Detach);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, &ASlimeCharacter::ChargeJump);
+	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, &ASlimeCharacter::ChargeJump);
 }
 
 void ClimbingState::OnUpdate()

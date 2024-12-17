@@ -10,7 +10,7 @@ void JumpingState::OnEnter()
 
 	Player->ResetBindings();
 
-	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Move);
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, &ASlimeCharacter::Move);
 
 	const FVector LaunchVelocity = Player->JumpVelocity * (Player->GetActorUpVector() + Player->GetActorForwardVector());
 
@@ -20,14 +20,14 @@ void JumpingState::OnEnter()
 	Player->LaunchCharacter(LaunchVelocity, false, false);
 
 
-	//Play sound at location
+	Player->PlaySoundAtLocation(Player->JumpSound);
 
 	//Player->SetMaterialOverTime(, 1.0f);
 }
 
 void JumpingState::OnExit()
 {
-	//Play sound at location
+	Player->PlaySoundAtLocation(Player->SplatSound);
 	Player->JumpVelocity = FVector::Zero();
 }
 

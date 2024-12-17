@@ -22,6 +22,7 @@
 
 #include "PlayerState/PlayerStateInterface.h"
 #include <memory>
+#include "Sound/SoundCue.h"
 
 #include "SlimeCharacter.generated.h"
 
@@ -78,6 +79,22 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	UInputAction* ChargeThrowAction;
 
+	//Sounds
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundCue* JumpSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundCue* PopSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundCue* DetachSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundCue* SlideSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
+	USoundCue* SplatSound;
+
 	//Item
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USceneComponent* ItemLocation;
@@ -95,6 +112,7 @@ public:
 
 	// ----------- Methods -----------
 private:
+
 	void OnThrowCooldownFinished();
 
 	void SetUpMovementAxisUsingHitResult(const FHitResult& HitResult);
@@ -114,6 +132,8 @@ public:
 
 	template<typename InheritsPlayerState>
 	void SetState();
+
+	void PlaySoundAtLocation(USoundCue* SoundCue);
 
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool IsPlayerGrounded();
@@ -139,16 +159,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool TraceForNewGravity(const FVector& Direction, const float LineLength, FVector& NewGravity);
 
-
 	UFUNCTION(BlueprintCallable)
 	void OnHit();
 
-
-	//Blueprint implementable events
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Gameplay")
 	void AttachToWall(const FVector& NewGravity, const bool Boost);
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Gameplay")
 	void DetachFromWall();
+
+	//Timeline events
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void ApplyGravityTransition(const FVector& NewGravityDirection, const float PlaybackRate = 1.0f);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
@@ -162,8 +179,7 @@ public:
 	typedef void (ASlimeCharacter::* FPointer)(const FInputActionValue&);
 
 	void ResetBindings();
-
-	void SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, UObject* Object, FPointer FunctionName);
+	void SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, FPointer FunctionName);
 
 	//Input callback functions
 	void Move(const FInputActionValue& Value);
@@ -182,13 +198,12 @@ public:
 	float PickUpCooldown;
 	float JumpCooldown;
 	float IncrementRate;
-	float MaxDistFromSurface = 100.f;
+	float MaxDistanceFromSurface = 100.f;
 
 	FVector JumpVelocity;
 	FVector ThrowVelocity;
 	FVector MovementVectorX;
 	FVector MovementVectorY;
-
 
 public:
 	// Called every frame

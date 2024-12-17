@@ -9,7 +9,7 @@ void FallingState::OnEnter()
 
 	Player->ResetBindings();
 
-	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, Player, &ASlimeCharacter::Move);
+	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, &ASlimeCharacter::Move);
 
 	if (Player->JumpVelocity != FVector::Zero())
 	{
@@ -21,7 +21,7 @@ void FallingState::OnEnter()
 
 void FallingState::OnExit()
 {
-	//Play sound at location
+	Player->PlaySoundAtLocation(Player->SplatSound);
 }
 
 void FallingState::OnUpdate()

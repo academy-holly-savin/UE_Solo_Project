@@ -95,35 +95,49 @@ void ASlimeCharacter::BeginPlay()
 	SetState<DefaultState>();
 }
 
+void ASlimeCharacter::PlaySoundAtLocation(USoundCue* SoundCue)
+{
+	if (SoundCue)
+	{
+		FVector Location = GetActorLocation();
+		FRotator Rotation = GetActorRotation();
+		float VolumeMultiplier = 1.0f;
+		float PitchMultiplier = 1.0f;
+		float StartTime = 0.0f;
+
+		UGameplayStatics::PlaySoundAtLocation(this, SoundCue, Location, Rotation, VolumeMultiplier, PitchMultiplier, StartTime);
+	}
+}
+
 bool ASlimeCharacter::IsPlayerGrounded()
 {
 	FVector Down = GetActorUpVector() * -1.0f;
-	return LineTraceInDirection(Down, MaxDistFromSurface) && (Down == FVector(0.0f, 0.0f, -1.0f));
+	return LineTraceInDirection(Down, MaxDistanceFromSurface) && (Down == FVector(0.0f, 0.0f, -1.0f));
 }
 
 bool ASlimeCharacter::IsPlayerOnClimbableSurface()
 {
 	FVector Down = GetActorUpVector() * -1.0f;
-	return LineTraceInDirection(Down, MaxDistFromSurface);
+	return LineTraceInDirection(Down, MaxDistanceFromSurface);
 }
 
 bool ASlimeCharacter::HasPlayerFoundNewSurface(FVector& NewGravity)
 {
 	bool FoundNewSurface = false;
 
-	if (TraceForNewGravity(GetActorForwardVector(), MaxDistFromSurface / 2.0f, NewGravity))
+	if (TraceForNewGravity(GetActorForwardVector(), MaxDistanceFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorUpVector(), MaxDistFromSurface, NewGravity))
+	else if (TraceForNewGravity(GetActorUpVector(), MaxDistanceFromSurface, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorRightVector(), MaxDistFromSurface / 2.0f, NewGravity))
+	else if (TraceForNewGravity(GetActorRightVector(), MaxDistanceFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorRightVector() * -1.0f, MaxDistFromSurface / 2.0f, NewGravity))
+	else if (TraceForNewGravity(GetActorRightVector() * -1.0f, MaxDistanceFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
@@ -203,15 +217,15 @@ void ASlimeCharacter::ResetBindings()
 
 	InputComponent->ClearActionBindings();
 
-	SetUpBinding(LookAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Look);
-	SetUpBinding(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-	SetUpBinding(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
-	SetUpBinding(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
-	SetUpBinding(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
+	SetUpBinding(LookAction, ETriggerEvent::Triggered, &ASlimeCharacter::Look);
+	SetUpBinding(ThrowAction, ETriggerEvent::Triggered, &ASlimeCharacter::Throw);
+	SetUpBinding(InteractAction, ETriggerEvent::Triggered, &ASlimeCharacter::Interact);
+	SetUpBinding(ChargeThrowAction, ETriggerEvent::Triggered, &ASlimeCharacter::ChargeThrow);
+	SetUpBinding(ChargeThrowAction, ETriggerEvent::Ongoing, &ASlimeCharacter::ChargeThrow);
 
 }
 
-void ASlimeCharacter::SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, UObject* Object, FPointer FunctionPointer)
+void ASlimeCharacter::SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, FPointer FunctionPointer)
 {
 	InputComponent->BindAction(Action, TriggerEvent, this, FunctionPointer);
 }
@@ -324,6 +338,23 @@ void ASlimeCharacter::Interact(const FInputActionValue& Value)
 void ASlimeCharacter::OnHit()
 {
 	CurrentState->OnHit();
+}
+
+void ASlimeCharacter::AttachToWall(const FVector& NewGravity, const bool Boost)
+{
+	if (Boost)
+	{
+		ACharacter::Jump();
+	}
+	PlaySoundAtLocation(SlideSound);
+	ApplyGravityTransition(NewGravity);
+}
+
+void ASlimeCharacter::DetachFromWall()
+{
+	ACharacter::Jump();
+	PlaySoundAtLocation(SlideSound);
+	ApplyGravityTransition(FVector(0,0,-1));
 }
 
 void ASlimeCharacter::ResetMaterial()
