@@ -16,4 +16,5 @@ public:
 
 protected:
     ASlimeCharacter* Player; // Reference to Player character
+
 };

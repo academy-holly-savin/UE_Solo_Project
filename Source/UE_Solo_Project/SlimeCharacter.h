@@ -91,6 +91,8 @@ public:
 
 	FTimerHandle TimerHandle;
 
+	UEnhancedInputComponent* InputComponent;
+
 	// ----------- Methods -----------
 private:
 	void OnThrowCooldownFinished();
@@ -106,12 +108,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	template<typename InheritsPlayerState>
-	void SetState();
-
 public:
 	// Sets default values for this character's properties
 	ASlimeCharacter();
+
+	template<typename InheritsPlayerState>
+	void SetState();
 
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool IsPlayerGrounded();
@@ -123,10 +125,6 @@ public:
 	bool HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVector& NewLocation);
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	void PickUp();
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
-	void OnWallMovement(float inputX, float inputY);
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
-	void DefaultMovement(float inputX, float inputY);
 
 	UFUNCTION(BlueprintCallable)
 	void LerpGravity(const FVector& NewGravityDirection, const float Alpha);
@@ -141,6 +139,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool TraceForNewGravity(const FVector& Direction, const float LineLength, FVector& NewGravity);
 
+
+	UFUNCTION(BlueprintCallable)
+	void OnHit();
+
+
 	//Blueprint implementable events
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Gameplay")
 	void AttachToWall(const FVector& NewGravity, const bool Boost);
@@ -153,12 +156,19 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetMaterialOverTime(UMaterialInstance* NewMaterial, const float Alpha);
 
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void ResetBindings();
+
+	void BindDefaultInputs();
+	void BindFallingInputs();
+	void BindJumpingInputs();
+	void BindClimbingInputs();
+
 	//Input callback functions
 	void Move(const FInputActionValue& Value);
+	void OnWallMove(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Throw(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
@@ -167,14 +177,13 @@ public:
 	void Detach(const FInputActionValue& Value);
 	void Interact(const FInputActionValue& Value);
 
-private:
-
-	std::unique_ptr<IPlayerState> PlayerState;
+public:
+	std::unique_ptr<IPlayerState> CurrentState;
 
 	float PickUpCooldown;
 	float JumpCooldown;
 	float IncrementRate;
-	float MaxDistFromSurface;
+	float MaxDistFromSurface = 100.f;
 
 	FVector JumpVelocity;
 	FVector ThrowVelocity;
@@ -191,14 +200,14 @@ public:
 template<typename InheritsPlayerState>
 inline void ASlimeCharacter::SetState()
 {
-	if (PlayerState)
+	if (CurrentState)
 	{
-		PlayerState->OnExit();
+		CurrentState->OnExit();
 	}
-	PlayerState = std::make_unique<InheritsPlayerState>(this);
+	CurrentState = std::make_unique<InheritsPlayerState>(this);
 
-	FString NameString = PlayerState->GetName().ToString();
+	FString NameString = CurrentState->GetName().ToString();
 	UE_LOG(LogTemp, Warning, TEXT("New State : % s"), *NameString);
 
-	PlayerState->OnEnter();
+	CurrentState->OnEnter();
 };

@@ -9,10 +9,13 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+
 #include "PlayerState/DefaultState.h"
+#include "PlayerState/JumpingState.h"
 
 #include "UObject/ConstructorHelpers.h"
 
@@ -87,7 +90,6 @@ void ASlimeCharacter::BeginPlay()
 	{
 		DynamicMaterialInstance = SlimeMesh->CreateDynamicMaterialInstance(0, BaseMaterial);
 	}
-
 	//Add state
 	SetState<DefaultState>();
 }
@@ -101,26 +103,26 @@ bool ASlimeCharacter::IsPlayerGrounded()
 bool ASlimeCharacter::IsPlayerOnClimbableSurface()
 {
 	FVector Down = GetActorUpVector() * -1.0f;
-	return LineTraceInDirection(Down, 100.0f);
+	return LineTraceInDirection(Down, MaxDistFromSurface);
 }
 
 bool ASlimeCharacter::HasPlayerFoundNewSurface(FVector& NewGravity)
 {
 	bool FoundNewSurface = false;
 
-	if (TraceForNewGravity(GetActorForwardVector(), 50.0f, NewGravity))
+	if (TraceForNewGravity(GetActorForwardVector(), MaxDistFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorUpVector(), 100.0f, NewGravity))
+	else if (TraceForNewGravity(GetActorUpVector(), MaxDistFromSurface, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorRightVector(), 50.0f, NewGravity))
+	else if (TraceForNewGravity(GetActorRightVector(), MaxDistFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
-	else if (TraceForNewGravity(GetActorRightVector() * 1.0f, 50.0f, NewGravity))
+	else if (TraceForNewGravity(GetActorRightVector() * -1.0f, MaxDistFromSurface / 2.0f, NewGravity))
 	{
 		FoundNewSurface = true;
 	}
@@ -158,6 +160,10 @@ bool ASlimeCharacter::HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVect
 		NewLocation = HitResult.ImpactPoint + HitResult.Normal * 90.0f;
 	}
 
+
+	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
+	DrawDebugLine(GetWorld(), Start, End, HitResult.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+
 	return bIsHit;
 }
 
@@ -165,40 +171,15 @@ void ASlimeCharacter::PickUp()
 {
 }
 
-void ASlimeCharacter::OnWallMovement(float InputX, float InputY)
-{
-	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
-	
-	AddMovementInput(MovementVectorX, InputX);	
-	AddMovementInput(MovementVectorY, InputY);
-
-	GetCharacterMovement()->SetPlaneConstraintEnabled(false);
-}
-
-void ASlimeCharacter::DefaultMovement(float InputX, float InputY)
-{
-	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
-	// find out which way is forward
-	const FRotator Rotation = Controller->GetControlRotation();
-	const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-	// get forward vector
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-	// get right vector 
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-	// add movement 
-	AddMovementInput(ForwardDirection, InputY);
-	AddMovementInput(RightDirection, InputX);
-
-	GetCharacterMovement()->SetPlaneConstraintEnabled(false);
-}
-
 // Called every frame
 void ASlimeCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (CurrentState)
+	{
+		CurrentState->OnUpdate();
+	}
 }
 
 // Called to bind functionality to input
@@ -214,29 +195,111 @@ void ASlimeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		}
 	}
 
-	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	InputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+}
 
-	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
-	Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Look);
-	Input->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-	Input->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Jump);
-	Input->BindAction(DetachAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Detach);
-	Input->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
+void ASlimeCharacter::ResetBindings()
+{
+	if (!InputComponent) return;
 
-	Input->BindAction(ChargeJumpAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeJump);
-	Input->BindAction(ChargeJumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeJump);
+	InputComponent->ClearActionBindings();
+	InputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Look);
 
-	Input->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
-	Input->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
+}
+
+void ASlimeCharacter::BindDefaultInputs()
+{
+	if (!InputComponent) return;
+
+	ResetBindings();
+
+	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
+	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
+	InputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Jump);
+	InputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
+	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeJump);
+	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeJump);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);	
+}
+
+void ASlimeCharacter::BindFallingInputs()
+{
+	if (!InputComponent) return;
+
+	ResetBindings();
+
+	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
+	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
+}
+
+void ASlimeCharacter::BindJumpingInputs()
+{
+	if (!InputComponent) return;
+
+	ResetBindings();
+
+	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
+	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
+}
+
+void ASlimeCharacter::BindClimbingInputs()
+{
+	if (!InputComponent) return;
+
+	ResetBindings();
+
+	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::OnWallMove);
+	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
+	InputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Jump);
+	InputComponent->BindAction(DetachAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Detach);
+	InputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Interact);
+
+	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeJump);
+	InputComponent->BindAction(ChargeJumpAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeJump);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Ongoing, this, &ASlimeCharacter::ChargeThrow);
+	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);
 }
 
 void ASlimeCharacter::Move(const FInputActionValue& Value)
 {
+	if (IsTransitioning) return;
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	DefaultMovement(MovementVector.X, MovementVector.Y);
-	// Use the X and Y components of the vector for movement
-	//Call state.move
+	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
+	// find out which way is forward
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+	// get forward vector
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+	// get right vector 
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	// add movement 
+	AddMovementInput(ForwardDirection, MovementVector.Y);
+	AddMovementInput(RightDirection, MovementVector.X);
+
+	GetCharacterMovement()->SetPlaneConstraintEnabled(false);
+}
+
+
+void ASlimeCharacter::OnWallMove(const FInputActionValue& Value)
+{
+	if (IsTransitioning) return;
+
+	FVector2D MovementVector = Value.Get<FVector2D>();
+
+	GetCharacterMovement()->SetPlaneConstraintEnabled(true);
+
+	AddMovementInput(MovementVectorX, MovementVector.X);
+	AddMovementInput(MovementVectorY, MovementVector.Y);
+
+	GetCharacterMovement()->SetPlaneConstraintEnabled(false);
 }
 
 void ASlimeCharacter::Look(const FInputActionValue& Value)
@@ -265,13 +328,14 @@ void ASlimeCharacter::Throw(const FInputActionValue& Value)
 void ASlimeCharacter::Jump(const FInputActionValue& Value)
 {
 	//Change state to jumping
+	SetState<JumpingState>();
 }
 
 void ASlimeCharacter::ChargeJump(const FInputActionValue& Value)
 {
-	const float MinVel = 1000.0f;
-	const float MaxVel = 1300.0f;
-	const float ChargeRate = 500.0f;
+	const double MinVel = 1000.0f;
+	const double MaxVel = 1300.0f;
+	const double ChargeRate = 500.0f;
 
 	JumpVelocity = GetChargedVelocity(JumpVelocity, MinVel, MaxVel, ChargeRate);
 
@@ -282,9 +346,9 @@ void ASlimeCharacter::ChargeJump(const FInputActionValue& Value)
 
 void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 {
-	const float MinVel = 400.0f;
-	const float MaxVel = 1000.0f;
-	const float ChargeRate = 200.0f;
+	const double MinVel = 400.0f;
+	const double MaxVel = 1000.0f;
+	const double ChargeRate = 200.0f;
 
 	ThrowVelocity = GetChargedVelocity(ThrowVelocity, MinVel, MaxVel, ChargeRate);
 
@@ -295,10 +359,16 @@ void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 
 void ASlimeCharacter::Detach(const FInputActionValue& Value)
 {
+	DetachFromWall();
 }
 
 void ASlimeCharacter::Interact(const FInputActionValue& Value)
 {
+}
+
+void ASlimeCharacter::OnHit()
+{
+	CurrentState->OnHit();
 }
 
 void ASlimeCharacter::ResetMaterial()
@@ -350,6 +420,10 @@ bool ASlimeCharacter::LineTraceInDirection(const FVector& Direction, const float
 		CollisionParams
 	);
 
+	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
+	//DrawDebugLine(GetWorld(), Start, End, OutHit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+
+
 	return bIsHit;
 }
 
@@ -394,9 +468,9 @@ FVector ASlimeCharacter::GetChargedVelocity(const FVector& CurrentVelocity, cons
 {
 	FVector ChargedVelocity = CurrentVelocity + ChargeRate * GetWorld()->GetDeltaSeconds();
 
-	FMath::Clamp(ChargedVelocity.X, MinVel, MaxVel);
-	FMath::Clamp(ChargedVelocity.Y, MinVel, MaxVel);
-	FMath::Clamp(ChargedVelocity.Z, MinVel, MaxVel);
+	ChargedVelocity.X = FMath::Clamp(ChargedVelocity.X, MinVel, MaxVel);
+	ChargedVelocity.Y = FMath::Clamp(ChargedVelocity.Y, MinVel, MaxVel);
+	ChargedVelocity.Z = FMath::Clamp(ChargedVelocity.Z, MinVel, MaxVel);
 
 	return ChargedVelocity;
 }
