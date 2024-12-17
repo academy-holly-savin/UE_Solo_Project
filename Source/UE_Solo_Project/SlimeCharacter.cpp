@@ -72,13 +72,6 @@ ASlimeCharacter::ASlimeCharacter()
 	// Initialize the camera boom
 	ItemLocation = CreateDefaultSubobject<USceneComponent>(TEXT("ItemLocation"));
 	ItemLocation->SetupAttachment(GetCapsuleComponent()); // Attach the boom to the capsule
-
-	// Use ConstructorHelpers::FObjectFinder in the constructor
-	static ConstructorHelpers::FObjectFinder<UMaterialInstance> MaterialFinder(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Materials/Slime/MI_Slime_Default.MI_Slime_Default'"));
-	if (MaterialFinder.Succeeded())
-	{
-		BaseMaterial = MaterialFinder.Object;
-	}
 }
 
 // Called when the game starts or when spawned
@@ -87,9 +80,9 @@ void ASlimeCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Create and apply the dynamic material instance
-	if (BaseMaterial)
+	if (DefaultMaterial)
 	{
-		DynamicMaterialInstance = SlimeMesh->CreateDynamicMaterialInstance(0, BaseMaterial);
+		DynamicMaterialInstance = SlimeMesh->CreateDynamicMaterialInstance(0, DefaultMaterial);
 	}
 	//Add state
 	SetState<DefaultState>();
@@ -287,7 +280,9 @@ void ASlimeCharacter::Throw(const FInputActionValue& Value)
 	{
 		//Actual throw stuff here
 	}
-	ResetMaterial();
+	
+	SetMaterialOverTime(DefaultMaterial);
+
 	ThrowVelocity = FVector::Zero();
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ASlimeCharacter::OnThrowCooldownFinished, 3.0f, false);
 }
@@ -309,7 +304,7 @@ void ASlimeCharacter::ChargeJump(const FInputActionValue& Value)
 
 	//Set Material Overtime
 	const float MaterialAlpha = JumpVelocity.X / MaxVel;
-	//SetMaterialOvertime(M_Slime_Charged, Alpha);
+	SetMaterialOverTime(ChargingMaterial, MaterialAlpha);
 }
 
 void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
@@ -322,7 +317,7 @@ void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 
 	//Set Material Overtime
 	const float MaterialAlpha = ThrowVelocity.X / MaxVel;
-	//SetMaterialOvertime(M_Slime_Charged, Alpha);
+	SetMaterialOverTime(ChargingMaterial, MaterialAlpha);
 }
 
 void ASlimeCharacter::Detach(const FInputActionValue& Value)
@@ -354,15 +349,7 @@ void ASlimeCharacter::DetachFromWall()
 {
 	ACharacter::Jump();
 	PlaySoundAtLocation(SlideSound);
-	ApplyGravityTransition(FVector(0,0,-1));
-}
-
-void ASlimeCharacter::ResetMaterial()
-{
-	if (BaseMaterial)
-	{
-		SetMaterialOverTime(BaseMaterial, 1.0f);
-	}
+	ApplyGravityTransition(FVector(0, 0, -1));
 }
 
 void ASlimeCharacter::LerpGravity(const FVector& NewGravityDirection, const float Alpha)
@@ -381,7 +368,7 @@ void ASlimeCharacter::LerpLocation(const FVector& NewLocation, const float Alpha
 
 void ASlimeCharacter::InterpolateMaterialInstances(UMaterialInstance* NewMaterial, const float Alpha)
 {
-	UMaterialInstance* CurrentMaterial = Cast<UMaterialInstance>(DynamicMaterialInstance->Parent);
+	UMaterialInstance* CurrentMaterial = Cast<UMaterialInstance>(SlimeMesh->GetMaterial(0));
 
 	if (CurrentMaterial)
 	{

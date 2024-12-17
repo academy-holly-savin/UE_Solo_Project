@@ -22,7 +22,7 @@ void JumpingState::OnEnter()
 
 	Player->PlaySoundAtLocation(Player->JumpSound);
 
-	//Player->SetMaterialOverTime(, 1.0f);
+	Player->SetMaterialOverTime(Player->FallingMaterial);
 }
 
 void JumpingState::OnExit()
@@ -33,8 +33,6 @@ void JumpingState::OnExit()
 
 void JumpingState::OnHit()
 {
-	Player->ResetMaterial();
-
 	FVector NewGravity;
 
 	if (Player->HasPlayerFoundNewSurface(NewGravity))

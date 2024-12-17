@@ -43,7 +43,6 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UMaterialInstanceDynamic* DynamicMaterialInstance;
 
-	UMaterialInstance* BaseMaterial;
 	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	USpringArmComponent* CameraBoom;
@@ -95,6 +94,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound")
 	USoundCue* SplatSound;
 
+	//Materials
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Material")
+	UMaterialInstance* DefaultMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Material")
+	UMaterialInstance* ChargingMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Material")
+	UMaterialInstance* FallingMaterial;
+
+
 	//Item
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USceneComponent* ItemLocation;
@@ -130,48 +140,50 @@ public:
 	// Sets default values for this character's properties
 	ASlimeCharacter();
 
+	UFUNCTION(BlueprintCallable)
+	void LerpGravity(const FVector& NewGravityDirection, const float Alpha);
+
+	UFUNCTION(BlueprintCallable)
+	void LerpLocation(const FVector& NewLocation, const float Alpha);
+
+	UFUNCTION(BlueprintCallable)
+	void InterpolateMaterialInstances(UMaterialInstance* NewMaterial, const float Alpha);
+
+	UFUNCTION(BlueprintCallable)
+	void OnHit();
+
+	//Timeline events
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void ApplyGravityTransition(const FVector& NewGravityDirection, const float PlaybackRate = 1.0f);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void ApplyLocationTransition(const FVector& NewLocation, const float PlaybackRate = 1.0f);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetMaterialOverTime(UMaterialInstance* NewMaterial, const float Alpha = 1.0f);
+
+	//Privates?
+
 	template<typename InheritsPlayerState>
 	void SetState();
 
 	void PlaySoundAtLocation(USoundCue* SoundCue);
 
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool IsPlayerGrounded();
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+
 	bool IsPlayerOnClimbableSurface();
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+
 	bool HasPlayerFoundNewSurface(FVector& NewGravity);
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
+
 	bool HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVector& NewLocation);
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
-	void PickUp();
 
-	UFUNCTION(BlueprintCallable)
-	void LerpGravity(const FVector& NewGravityDirection, const float Alpha);
-	UFUNCTION(BlueprintCallable)
-	void LerpLocation(const FVector& NewLocation, const float Alpha);
-
-	UFUNCTION(BlueprintCallable)
-	void ResetMaterial();
-	UFUNCTION(BlueprintCallable)
-	void InterpolateMaterialInstances(UMaterialInstance* NewMaterial, const float Alpha);
-
-	UFUNCTION(BlueprintCallable, Category = "Gameplay")
 	bool TraceForNewGravity(const FVector& Direction, const float LineLength, FVector& NewGravity);
 
-	UFUNCTION(BlueprintCallable)
-	void OnHit();
+	void PickUp();
 
 	void AttachToWall(const FVector& NewGravity, const bool Boost);
-	void DetachFromWall();
 
-	//Timeline events
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void ApplyGravityTransition(const FVector& NewGravityDirection, const float PlaybackRate = 1.0f);
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void ApplyLocationTransition(const FVector& NewLocation, const float PlaybackRate = 1.0f);
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void SetMaterialOverTime(UMaterialInstance* NewMaterial, const float Alpha);
+	void DetachFromWall();
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -179,17 +191,26 @@ public:
 	typedef void (ASlimeCharacter::* FPointer)(const FInputActionValue&);
 
 	void ResetBindings();
+
 	void SetUpBinding(const UInputAction* Action, ETriggerEvent TriggerEvent, FPointer FunctionName);
 
 	//Input callback functions
 	void Move(const FInputActionValue& Value);
+
 	void OnWallMove(const FInputActionValue& Value);
+
 	void Look(const FInputActionValue& Value);
+
 	void Throw(const FInputActionValue& Value);
+
 	void Jump(const FInputActionValue& Value);
+
 	void ChargeJump(const FInputActionValue& Value);
+
 	void ChargeThrow(const FInputActionValue& Value);
+
 	void Detach(const FInputActionValue& Value);
+
 	void Interact(const FInputActionValue& Value);
 
 public:

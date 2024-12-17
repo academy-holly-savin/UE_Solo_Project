@@ -11,12 +11,14 @@ void FallingState::OnEnter()
 
 	Player->SetUpBinding(Player->MoveAction, ETriggerEvent::Triggered, &ASlimeCharacter::Move);
 
+	Player->SetMaterialOverTime(Player->FallingMaterial);
+
 	if (Player->JumpVelocity != FVector::Zero())
 	{
 		Player->JumpVelocity = FVector::Zero();
-		Player->ApplyGravityTransition(FVector(0,0,-1));
-		//Falling material Player->SetMaterialOverTime();
 	}
+
+	Player->ApplyGravityTransition(FVector(0, 0, -1));
 }
 
 void FallingState::OnExit()

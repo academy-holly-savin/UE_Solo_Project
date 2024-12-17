@@ -14,6 +14,8 @@ void ClimbingState::OnEnter()
 	Player->SetUpBinding(Player->DetachAction, ETriggerEvent::Triggered, &ASlimeCharacter::Detach);
 	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, &ASlimeCharacter::ChargeJump);
 	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, &ASlimeCharacter::ChargeJump);
+
+	Player->SetMaterialOverTime(Player->DefaultMaterial);
 }
 
 void ClimbingState::OnUpdate()

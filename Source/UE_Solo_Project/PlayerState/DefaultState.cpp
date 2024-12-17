@@ -13,6 +13,8 @@ void DefaultState::OnEnter()
 	Player->SetUpBinding(Player->JumpAction, ETriggerEvent::Triggered, &ASlimeCharacter::Jump);
 	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Ongoing, &ASlimeCharacter::ChargeJump);
 	Player->SetUpBinding(Player->ChargeJumpAction, ETriggerEvent::Triggered, &ASlimeCharacter::ChargeJump);
+
+	Player->SetMaterialOverTime(Player->DefaultMaterial);
 }
 
 void DefaultState::OnUpdate()
