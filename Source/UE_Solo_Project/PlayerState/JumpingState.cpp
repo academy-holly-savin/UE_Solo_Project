@@ -6,7 +6,7 @@
 
 void JumpingState::OnEnter()
 {
-	Player->BindJumpingInputs();
+	Player->BindAirborneInput();
 
 	const FVector LaunchVelocity = Player->JumpVelocity * (Player->GetActorUpVector() + Player->GetActorForwardVector());
 

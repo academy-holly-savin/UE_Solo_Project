@@ -16,6 +16,7 @@
 
 #include "PlayerState/DefaultState.h"
 #include "PlayerState/JumpingState.h"
+#include "PlayerState/FallingState.h"
 
 #include "UObject/ConstructorHelpers.h"
 
@@ -160,9 +161,7 @@ bool ASlimeCharacter::HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVect
 		NewLocation = HitResult.ImpactPoint + HitResult.Normal * 90.0f;
 	}
 
-
-	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
-	DrawDebugLine(GetWorld(), Start, End, HitResult.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
+	//DrawDebugLine(GetWorld(), Start, End, HitResult.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
 	return bIsHit;
 }
@@ -223,17 +222,7 @@ void ASlimeCharacter::BindDefaultInputs()
 	InputComponent->BindAction(ChargeThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::ChargeThrow);	
 }
 
-void ASlimeCharacter::BindFallingInputs()
-{
-	if (!InputComponent) return;
-
-	ResetBindings();
-
-	InputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Move);
-	InputComponent->BindAction(ThrowAction, ETriggerEvent::Triggered, this, &ASlimeCharacter::Throw);
-}
-
-void ASlimeCharacter::BindJumpingInputs()
+void ASlimeCharacter::BindAirborneInput()
 {
 	if (!InputComponent) return;
 
@@ -327,6 +316,7 @@ void ASlimeCharacter::Throw(const FInputActionValue& Value)
 
 void ASlimeCharacter::Jump(const FInputActionValue& Value)
 {
+	if (IsTransitioning) return;
 	//Change state to jumping
 	SetState<JumpingState>();
 }
@@ -360,6 +350,7 @@ void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 void ASlimeCharacter::Detach(const FInputActionValue& Value)
 {
 	DetachFromWall();
+	SetState<FallingState>();
 }
 
 void ASlimeCharacter::Interact(const FInputActionValue& Value)
@@ -420,7 +411,6 @@ bool ASlimeCharacter::LineTraceInDirection(const FVector& Direction, const float
 		CollisionParams
 	);
 
-	// You can use DrawDebug helpers and the log to help visualize and debug your trace queries.
 	//DrawDebugLine(GetWorld(), Start, End, OutHit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
 

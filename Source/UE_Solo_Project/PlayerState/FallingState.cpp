@@ -5,7 +5,7 @@
 
 void FallingState::OnEnter()
 {
-	Player->BindFallingInputs();
+	Player->BindAirborneInput();
 	if (Player->JumpVelocity != FVector::Zero())
 	{
 		Player->JumpVelocity = FVector::Zero();

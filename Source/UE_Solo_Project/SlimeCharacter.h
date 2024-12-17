@@ -162,8 +162,7 @@ public:
 	void ResetBindings();
 
 	void BindDefaultInputs();
-	void BindFallingInputs();
-	void BindJumpingInputs();
+	void BindAirborneInput();
 	void BindClimbingInputs();
 
 	//Input callback functions
