@@ -28,6 +28,9 @@ void ClimbingState::OnUpdate()
 	{
 		FVector NewGravity;
 		FVector NewLocation;
+
+		UE_LOG(LogTemp, Error, TEXT("NO CLIMB SURFACE"));
+
 		if (Player->HasPlayerFoundWrapAroundSurface(NewGravity, NewLocation))
 		{
 			Player->ApplyLocationTransition(NewLocation);
@@ -37,6 +40,8 @@ void ClimbingState::OnUpdate()
 		{
 			Player->DetachFromWall();
 			Player->SetState<FallingState>();
+
+			UE_LOG(LogTemp, Error, TEXT("DETACH"));
 		}
 	}
 	else

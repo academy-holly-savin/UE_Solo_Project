@@ -20,13 +20,39 @@
 
 #include "Logging/LogMacros.h"
 
+#include "UObject/ConstructorHelpers.h"
+
 // Sets default values
 ASlimeCharacter::ASlimeCharacter()
 {
 	SlimeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SlimeMesh"));
 	SlimeMesh->SetupAttachment(GetCapsuleComponent());
+	SlimeMesh->SetCollisionProfileName(TEXT("Pawn"));
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>
+		SlimeFinder(TEXT("/Script/Engine.StaticMesh'/Game/Meshes/Slime/Slime_Slime_Body.Slime_Slime_Body'"));
+	if (SlimeMesh && SlimeFinder.Succeeded())
+	{
+		SlimeMesh->SetStaticMesh(SlimeFinder.Object);
+		SlimeMesh->SetRelativeLocation(FVector(0, 0, -65.0f));
+	}
+
+	FaceMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FaceMesh"));
+	FaceMesh->SetupAttachment(SlimeMesh);
+	FaceMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>
+		FaceFinder(TEXT("/Script/Engine.StaticMesh'/Game/Meshes/Slime/Slime_Slime_Face.Slime_Slime_Face'"));
+	if (FaceMesh && FaceFinder.Succeeded())
+	{
+		FaceMesh->SetStaticMesh(FaceFinder.Object);
+		FVector RelativeLocation = FVector(-53.5f, 0.0f, 63.0f);
+		FRotator RelativeRotation = FRotator(0.0f, -180.0f, 0.0f);
+		FaceMesh->SetRelativeLocationAndRotation(RelativeLocation, RelativeRotation);
+	}
+
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(35.0f, 90.0f);
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -62,6 +88,7 @@ ASlimeCharacter::ASlimeCharacter()
 	// Initialize the camera boom
 	ItemLocation = CreateDefaultSubobject<USceneComponent>(TEXT("ItemLocation"));
 	ItemLocation->SetupAttachment(GetCapsuleComponent()); // Attach the boom to the capsule
+	ItemLocation->SetRelativeLocation(FVector(0.0f, 0.0f, -35.0f));
 }
 
 // Called when the game starts or when spawned
@@ -173,8 +200,17 @@ bool ASlimeCharacter::HasPlayerFoundWrapAroundSurface(FVector& NewGravity, FVect
 	return bIsHit;
 }
 
-void ASlimeCharacter::PickUp()
+void ASlimeCharacter::PickUp(AItem* Item)
 {
+	if (!Item || IsHolding) return;
+
+	HeldItem = Item;
+	IsHolding = true;
+
+	HeldItem->Grab();
+
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::KeepRelative, EAttachmentRule::KeepRelative, true);
+	HeldItem->AttachToComponent(ItemLocation, AttachmentRules);
 }
 
 // Called every frame
@@ -276,11 +312,16 @@ void ASlimeCharacter::Look(const FInputActionValue& Value)
 
 void ASlimeCharacter::Throw(const FInputActionValue& Value)
 {
-	if (IsHolding)
-	{
-		//Actual throw stuff here
-	}
-	
+	if (!IsHolding || !HeldItem) return;
+
+	HeldItem->Release();
+	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+	HeldItem->SetActorLocationAndRotation(ItemLocation->GetComponentLocation(), ItemLocation->GetComponentRotation());
+
+	const FVector Impulse = ThrowVelocity * (GetActorUpVector() + GetActorForwardVector());
+
+	HeldItem->Launch(Impulse);
+
 	SetMaterialOverTime(DefaultMaterial);
 
 	ThrowVelocity = FVector::Zero();
@@ -309,6 +350,7 @@ void ASlimeCharacter::ChargeJump(const FInputActionValue& Value)
 
 void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 {
+	if (!IsHolding || !HeldItem) return;
 	const double MinVel = 400.0f;
 	const double MaxVel = 1000.0f;
 	const double ChargeRate = 200.0f;
@@ -333,6 +375,16 @@ void ASlimeCharacter::Interact(const FInputActionValue& Value)
 void ASlimeCharacter::OnHit()
 {
 	CurrentState->OnHit();
+}
+
+bool ASlimeCharacter::GetIsHolding()
+{
+	return IsHolding;
+}
+
+void ASlimeCharacter::SetIsHolding(const bool Holding)
+{
+	IsHolding = Holding;
 }
 
 void ASlimeCharacter::AttachToWall(const FVector& NewGravity, const bool Boost)
@@ -395,7 +447,6 @@ bool ASlimeCharacter::LineTraceInDirection(const FVector& Direction, const float
 
 	//DrawDebugLine(GetWorld(), Start, End, OutHit.bBlockingHit ? FColor::Blue : FColor::Red, false, 5.0f, 0, 10.0f);
 
-
 	return bIsHit;
 }
 
@@ -422,6 +473,7 @@ bool ASlimeCharacter::TraceForNewGravity(const FVector& Direction, const float L
 void ASlimeCharacter::OnThrowCooldownFinished()
 {
 	IsHolding = false;
+	HeldItem = nullptr;
 }
 
 void ASlimeCharacter::SetUpMovementAxisUsingHitResult(const FHitResult& HitResult)

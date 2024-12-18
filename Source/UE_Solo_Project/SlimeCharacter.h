@@ -24,6 +24,7 @@
 #include "Sound/SoundCue.h"
 
 #include "PlayerState/PlayerStateInterface.h"
+#include "Item.h"
 
 #include "SlimeCharacter.generated.h"
 
@@ -40,6 +41,9 @@ public:
 	//Slime
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* SlimeMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UStaticMeshComponent* FaceMesh;
 
 	//Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
@@ -110,6 +114,8 @@ public:
 	//Item
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USceneComponent* ItemLocation;
+
+	AItem* HeldItem;
 
 	//Variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -186,11 +192,15 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetMaterialOverTime(UMaterialInstance* NewMaterial, const float Alpha = 1.0f);
 
-	// Internal
+	// Methods
 
 	FVector GetJumpVelocity();
 
 	void SetJumpVelocity(const FVector& NewVelocity);
+
+	bool GetIsHolding();
+
+	void SetIsHolding(const bool Holding);
 
 	template<typename InheritsPlayerState>
 	void SetState();
@@ -207,7 +217,8 @@ public:
 
 	bool TraceForNewGravity(const FVector& Direction, const float LineLength, FVector& NewGravity);
 
-	void PickUp();
+	UFUNCTION(BlueprintCallable)
+	void PickUp(AItem* Item);
 
 	void AttachToWall(const FVector& NewGravity, const bool Boost);
 
