@@ -351,9 +351,9 @@ void ASlimeCharacter::ChargeJump(const FInputActionValue& Value)
 void ASlimeCharacter::ChargeThrow(const FInputActionValue& Value)
 {
 	if (!IsHolding || !HeldItem) return;
-	const double MinVel = 400.0f;
-	const double MaxVel = 1000.0f;
-	const double ChargeRate = 200.0f;
+	const double MinVel = 600.0f;
+	const double MaxVel = 800.0f;
+	const double ChargeRate = 50.0f;
 
 	ThrowVelocity = GetChargedVelocity(ThrowVelocity, MinVel, MaxVel, ChargeRate);
 

@@ -26,11 +26,12 @@ void AItem::BeginPlay()
 void AItem::Bobbing(float DeltaTime)
 {
 	const float BobbingSpeed = 150.0f;
-	const float BobbingDistance = 0.5f;
+	const float BobbingDistance = 10.0f;
 
 	const float OffsetPosition = FMath::Sin(BobbingSpeed * DeltaTime) * (BobbingDistance * DeltaTime);
 
-	ItemMesh->SetRelativeLocation(ItemMesh->GetRelativeLocation() + OffsetPosition);
+	ItemMesh->SetRelativeLocation(ItemMesh->GetRelativeLocation() +
+		ItemMesh->GetRelativeLocation().Z + OffsetPosition);
 }
 
 // Called every frame
