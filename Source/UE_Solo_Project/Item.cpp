@@ -14,6 +14,8 @@ AItem::AItem()
 
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision"));
 	BoxCollision->SetupAttachment(ItemMesh);
+
+	RunningTime = 0.0f;
 }
 
 // Called when the game starts or when spawned
@@ -25,13 +27,18 @@ void AItem::BeginPlay()
 
 void AItem::Bobbing(float DeltaTime)
 {
-	const float BobbingSpeed = 150.0f;
-	const float BobbingDistance = 10.0f;
+	const float BobbingAmplitude = 0.5f; 
+	const float BobbingFrequency = 5.0f;  
 
-	const float OffsetPosition = FMath::Sin(BobbingSpeed * DeltaTime) * (BobbingDistance * DeltaTime);
+	// Calculate new Z position
+	FVector NewLocation = GetActorLocation();
+	NewLocation.Z += FMath::Sin(RunningTime * BobbingFrequency) * BobbingAmplitude;
 
-	ItemMesh->SetRelativeLocation(ItemMesh->GetRelativeLocation() +
-		ItemMesh->GetRelativeLocation().Z + OffsetPosition);
+	// Update the actor's location
+	SetActorLocation(NewLocation);
+
+	// Increment running time
+	RunningTime += DeltaTime;
 }
 
 // Called every frame

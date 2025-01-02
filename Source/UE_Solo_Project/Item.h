@@ -20,6 +20,7 @@ public:
 	UBoxComponent* BoxCollision;
 private:
 	bool IsHeld = false;
+	float RunningTime;
 public:	
 	// Sets default values for this actor's properties
 	AItem();
